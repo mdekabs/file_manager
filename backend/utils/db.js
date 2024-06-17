@@ -3,29 +3,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const DEFAULT_DB_HOST = 'localhost';
-const DEFAULT_DB_PORT = 27017;
-const DEFAULT_DB_DATABASE = 'files_manager';
-const DB_HOST = process.env.DB_HOST || DEFAULT_DB_HOST;
-const DB_PORT = process.env.DB_PORT || DEFAULT_DB_PORT;
-const DB_DATABASE = process.env.DB_DATABASE || DEFAULT_DB_DATABASE;
-const MONGO_URI = process.env.DB;
-
-const MONGODB_CONNECTION_ERROR_MESSAGE = 'Failed to connect to MongoDB: ';
-const MONGODB_USER_COUNT_ERROR_MESSAGE = 'Failed to count documents in users collection: ';
-const MONGODB_FILE_COUNT_ERROR_MESSAGE = 'Failed to count documents in files collection: ';
-
 class DBClient {
   constructor() {
     this.connected = false;
-    mongoose.connect(MONGO_URI)
-      .then(() => {
-        this.connected = true;
-        console.log('Connected to MongoDB');
-      })
-      .catch((err) => {
-        console.error(`${MONGODB_CONNECTION_ERROR_MESSAGE}${err}`);
-      });
+    this._connect();
+  }
+
+  async _connect() {
+    try {
+      const database = process.env.DB_DATABASE || 'mongodb+srv://1mawoda:Hovare001@cluster0.pzwtw9x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+      await mongoose.connect(database);
+      this.connected = true;
+      console.log('MongoDB client connected successfully');
+    } catch (err) {
+      console.error('MongoDB client not connected to the server:', err);
+    }
   }
 
   isAlive() {
@@ -34,20 +26,18 @@ class DBClient {
 
   async nbUsers() {
     try {
-      const count = await mongoose.connection.db.collection('users').countDocuments();
-      return count;
+      return await mongoose.connection.collection('users').countDocuments();
     } catch (err) {
-      console.error(`${MONGODB_USER_COUNT_ERROR_MESSAGE}${err}`);
+      console.error('Error counting users in MongoDB:', err);
       return 0;
     }
   }
 
   async nbFiles() {
     try {
-      const count = await mongoose.connection.db.collection('files').countDocuments();
-      return count;
+      return await mongoose.connection.collection('files').countDocuments();
     } catch (err) {
-      console.error(`${MONGODB_FILE_COUNT_ERROR_MESSAGE}${err}`);
+      console.error('Error counting files in MongoDB:', err);
       return 0;
     }
   }

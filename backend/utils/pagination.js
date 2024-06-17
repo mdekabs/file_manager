@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const ITEMS_PER_PAGE = 20; // Default number of items per page
+const ITEMS_PER_PAGE = 20;
 
 async function paginate(model, query, page, itemsPerPage = ITEMS_PER_PAGE, baseUrl) {
   const totalItems = await model.countDocuments(query);

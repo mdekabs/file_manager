@@ -10,4 +10,11 @@ const fileQueue = new Bull('fileQueue', {
   },
 });
 
-export { fileQueue };
+const userQueue = new Bull('userQueue', {
+  redis: {
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379,
+  },
+});
+
+export { fileQueue, userQueue };

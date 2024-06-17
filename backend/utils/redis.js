@@ -1,57 +1,45 @@
-import { createClient } from 'redis';
-
-const REDIS_ERROR_EVENT = 'error';
-const REDIS_CONNECTION_ERROR_MESSAGE = 'Redis client error: ';
-const REDIS_CONNECTION_FAIL_MESSAGE = 'Failed to connect to Redis: ';
-const REDIS_GET_FAIL_MESSAGE = 'Failed to get value for key ';
-const REDIS_SET_FAIL_MESSAGE = 'Failed to set value for key ';
-const REDIS_DEL_FAIL_MESSAGE = 'Failed to delete key ';
+import redis from 'redis';
+import { promisify } from 'util';
 
 class RedisClient {
   constructor() {
-    this.client = createClient();
+    this.client = redis.createClient();
 
-    this.client.on(REDIS_ERROR_EVENT, (err) => {
-      console.error(`${REDIS_CONNECTION_ERROR_MESSAGE}${err}`);
+    this.client.on('error', (err) => {
+      console.error('Redis client not connected to the server:', err);
     });
 
-    this.client.connect().catch((err) => {
-      console.error(`${REDIS_CONNECTION_FAIL_MESSAGE}${err}`);
-    });
+    this.getAsync = promisify(this.client.get).bind(this.client);
+    this.setAsync = promisify(this.client.set).bind(this.client);
+    this.delAsync = promisify(this.client.del).bind(this.client);
   }
 
-  async isAlive() {
-    try {
-      await this.client.ping();
-      return true;
-    } catch (err) {
-      return false;
-    }
+  isAlive() {
+    return this.client.connected;
   }
 
   async get(key) {
     try {
-      const value = await this.client.get(key);
-      return value;
+      return await this.getAsync(key);
     } catch (err) {
-      console.error(`${REDIS_GET_FAIL_MESSAGE}${key}: ${err}`);
+      console.error('Error getting value from Redis:', err);
       return null;
     }
   }
 
   async set(key, value, duration) {
     try {
-      await this.client.set(key, value, { EX: duration });
+      await this.setAsync(key, value, 'EX', duration);
     } catch (err) {
-      console.error(`${REDIS_SET_FAIL_MESSAGE}${key}: ${err}`);
+      console.error('Error setting value in Redis:', err);
     }
   }
 
   async del(key) {
     try {
-      await this.client.del(key);
+      await this.delAsync(key);
     } catch (err) {
-      console.error(`${REDIS_DEL_FAIL_MESSAGE}${key}: ${err}`);
+      console.error('Error deleting value from Redis:', err);
     }
   }
 }
